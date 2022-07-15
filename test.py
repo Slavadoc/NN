@@ -3,17 +3,17 @@ import numpy as np
 import scipy.special as plt
 
 # загрузка тренировочного набора данных
-traning_data_file = open("mnist_dataset/mnist_train_100.csv", 'r')
+traning_data_file = open("mnist_dataset/mnist_train.csv", 'r')
 traning_data_list = traning_data_file.readlines()
 traning_data_file.close()
 
 #загрузка тестового набора данных
-test_data_file = open("mnist_dataset/mnist_test_10.csv", 'r')
+test_data_file = open("mnist_dataset/mnist_test.csv", 'r')
 test_data_list = test_data_file.readlines()
 test_data_file.close()
 
-all_values = test_data_list[0].split(',')
-print(all_values[0])
+all_values = test_data_list[1].split(',')
+# print(all_values[0])
 
 class NeuralNetwork:
     #инициализация нейроной сети
@@ -55,11 +55,10 @@ class NeuralNetwork:
         pass
 
     #опрос нейроной сети
-    def query(self):  #функция скалярного произведения ( мартица весов и входные сигналы)
+    def query(self,inputs_list):  #функция скалярного произведения ( мартица весов и входные сигналы)
         #приобразование списка входных значений в двухмерный массив
         inputs = np.array(inputs_list, ndmin = 2 ).T
-
-        hidden_inputs = np.dot(self.whi, inputs) # расчитать входящие сигналы для скрsтого слоя# получение значений с разделением ,
+        hidden_inputs = np.dot(self.wih, inputs) # расчитать входящие сигналы для скрsтого слоя# получение значений с разделением ,
         hidden_outpus = self.activation_function(hidden_inputs) # расчитать исходящие сигналы для скрытого слоя
         final_inputs = np.dot(self.who, hidden_outpus)  # расчитать входящие сигналы выходного слоя
         final_outputs = self.activation_function(final_inputs) # расчитать исходящие сигналы выхрдного слоя
@@ -69,15 +68,40 @@ class NeuralNetwork:
 input_nodes = 784
 hidden_nodes = 100
 output_nodes = 10
-learningrate = 0.3
+learningrate =   0.1
+print("learningrate" , learningrate)
 
 n = NeuralNetwork( input_nodes, hidden_nodes, output_nodes, learningrate)
 
-# перебор всех запесей в тренировочном наборе
-for record in traning_data_list:
-    all_values = record.split(',') # получение значений с разделением ,
-    inputs = (np.asfarray(all_values[1:]) / 255.0 * 0.99) + 0.01 # создание целевого входных значений желаемое значение = 0.99
-    targets = np.zeros(output_nodes) + 0.01 # all_values[0] - целевое маркерное значение для данной записи
-    targets[int(all_values[0])] = 0.99
-    n.train(inputs,targets)
+epochs = 5
+print("Epochs = ", epochs)
+for e in range(epochs):
+    for record in traning_data_list: # перебор всех запесей в тренировочном наборе
+        all_values = record.split(',') # получение значений с разделением ,
+        inputs = (np.asfarray(all_values[1:]) / 255.0 * 0.99) + 0.01 # создание целевого входных значений желаемое значение = 0.99
+        targets = np.zeros(output_nodes) + 0.01 # all_values[0] - целевое маркерное значение для данной записи
+        targets[int(all_values[0])] = 0.99
+        n.train(inputs,targets)
+        pass
     pass
+
+#тестирование нейроной сети
+scorecard = [] # журнал оценки работы сети пустой
+for record in test_data_list:#прербрать все записи в тестовом наборе
+    all_values = record.split(',') # получит список значений , как разделитель
+    correct_label = int(all_values[0])# правильный ответ перове значение
+    # print(correct_label, "истинный маркер ")
+    inputs = (np.asfarray(all_values[1:]) / 255.0 * 0.99) + 0.01# маштабировать и сместить входные значения
+    outputs = n.query(inputs) # опрос сместить
+    label = np.argmax(outputs)#индекс наибольшего значения = маркерное значение
+    # print(label, "ответ сети")
+    if (label == correct_label):# присоеденить оценку ответа к концу списка
+        scorecard.append(1)# если ответ правильный присоедяется знаяение 1
+    else:
+        scorecard.append(0)#в случае неправльного зеачения 0
+        pass
+
+    pass
+# расчитать показатель эффективности в виде доли правильных ответов
+scorecard_array = np.asarray(scorecard)
+print("Эффективность = ", scorecard_array.sum() / scorecard_array.size )
