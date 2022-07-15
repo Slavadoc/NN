@@ -2,15 +2,18 @@ import numpy as np
 #библиотека содержаит сигмойду expit() - выезд
 import scipy.special as plt
 
-data_file = open("mnist_dataset/mnist_train_100.csv", 'r') # "открытие файла для чтения " r - только чтение без изменений
-data_list = data_file.readlines() # readlines () считывает весь файл целиком доступ к записям по типу data_list[0] data_list[5]  ...
-data_file.close() # закртытие файла ... что бы не жрал ресурсы
+# загрузка тренировочного набора данных
+traning_data_file = open("mnist_dataset/mnist_train_100.csv", 'r')
+traning_data_list = traning_data_file.readlines()
+traning_data_file.close()
 
-#scaled_input = (np.afarray(all_values[1:]) / 255.0 * 0.99 ) + 0.01
-#print(scaled_input)
+#загрузка тестового набора данных
+test_data_file = open("mnist_dataset/mnist_test_10.csv", 'r')
+test_data_list = test_data_file.readlines()
+test_data_file.close()
 
-print(len(data_list))
-print(data_list[5])
+all_values = test_data_list[0].split(',')
+print(all_values[0])
 
 class NeuralNetwork:
     #инициализация нейроной сети
@@ -30,12 +33,12 @@ class NeuralNetwork:
         pass
 
     #тренировка нейроной сети
-    def train( self, inputs_list, targetslist): # входящий список , целнвой список
+    def train( self, inputs_list, targets_list): # входящий список , целнвой список
         # преобразование список входящих значений в двухменрый массив
         inputs = np.array(inputs_list, ndmin=2).T # ndmin:  Specifies the minimum number of dimensions that result array should have. Каоличество измерений
         targets = np.array(targets_list, ndmin=2).T
 
-        hidden_inputs = np.dot(self.whi, inputs) # расчитать входящие сигналы для скрытого слоя
+        hidden_inputs = np.dot(self.wih, inputs) # расчитать входящие сигналы для скрытого слоя
         hidden_outputs = self.activation_function(hidden_inputs) # рассчитать исходящие сигналы для скрутого слоя
 
         final_inputs = np.dot(self.who, hidden_outputs)  # расситать входящие сигналы для выходного слоя
@@ -46,9 +49,9 @@ class NeuralNetwork:
         # распределенные согласно весовым коофицентам связей и рекомбенированны на скрытых улах
         hidden_errors = np.dot(self.who.T, output_errors)
         # обновить весовые коофиценты для связей между скрытым и выходным слоями
-        self.who += self.lr * np.dot((output_errors * final_outputs * (1.0 - final_outputs)), np.transpose(hidden_outpus))
+        self.who += self.lr * np.dot((output_errors * final_outputs * (1.0 - final_outputs)), np.transpose(hidden_outputs))
         # обновить веовые коофиценты для связей между входным и скрытым слоями
-        self.whi += self.lr * np.dot((hidden_errors * hidden_outputs * ( 1.0 - hidden_outputs)), np.transpose(inputs))
+        self.wih += self.lr * np.dot((hidden_errors * hidden_outputs * ( 1.0 - hidden_outputs)), np.transpose(inputs))
         pass
 
     #опрос нейроной сети
@@ -56,16 +59,25 @@ class NeuralNetwork:
         #приобразование списка входных значений в двухмерный массив
         inputs = np.array(inputs_list, ndmin = 2 ).T
 
-        hidden_inputs = np.dot(self.whi, inputs) # расчитать входящие сигналы для скрsтого слоя
+        hidden_inputs = np.dot(self.whi, inputs) # расчитать входящие сигналы для скрsтого слоя# получение значений с разделением ,
         hidden_outpus = self.activation_function(hidden_inputs) # расчитать исходящие сигналы для скрытого слоя
         final_inputs = np.dot(self.who, hidden_outpus)  # расчитать входящие сигналы выходного слоя
         final_outputs = self.activation_function(final_inputs) # расчитать исходящие сигналы выхрдного слоя
 
         return final_outputs
 
-input_nodes = 3
-hidden_nodes = 3
-output_nodes = 3
+input_nodes = 784
+hidden_nodes = 100
+output_nodes = 10
 learningrate = 0.3
 
 n = NeuralNetwork( input_nodes, hidden_nodes, output_nodes, learningrate)
+
+# перебор всех запесей в тренировочном наборе
+for record in traning_data_list:
+    all_values = record.split(',') # получение значений с разделением ,
+    inputs = (np.asfarray(all_values[1:]) / 255.0 * 0.99) + 0.01 # создание целевого входных значений желаемое значение = 0.99
+    targets = np.zeros(output_nodes) + 0.01 # all_values[0] - целевое маркерное значение для данной записи
+    targets[int(all_values[0])] = 0.99
+    n.train(inputs,targets)
+    pass
